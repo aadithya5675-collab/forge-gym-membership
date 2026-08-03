@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRight, Check, SlidersHorizontal } from 'lucide-react';
+import { ComparisonMatrixDialog } from '../../components/ui/ComparisonMatrixDialog';
 import { PLANS } from '../../data/membershipPlans';
 import { BillingCycle, MembershipPlan, PlanId } from '../../types/membership';
 import { BillingSelector } from './BillingSelector';
@@ -23,6 +25,7 @@ export function PlanStep({
   onSelectPlan,
   onNext,
 }: PlanStepProps) {
+  const [showMatrix, setShowMatrix] = useState(false);
   return (
     <div className="space-y-6">
       {/* Step Header */}
@@ -53,6 +56,25 @@ export function PlanStep({
           />
         ))}
       </div>
+
+      {/* Compare All Tiers Trigger Button */}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => setShowMatrix(true)}
+          className="flex items-center gap-1.5 text-xs font-bold text-[#C7FF3D] hover:text-[#A8E65C] transition-colors py-1 focus:outline-none"
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          <span>Compare All Tier Privileges</span>
+        </button>
+      </div>
+
+      {/* Comparison Matrix Modal */}
+      <ComparisonMatrixDialog
+        isOpen={showMatrix}
+        onClose={() => setShowMatrix(false)}
+        onSelectPlan={onSelectPlan}
+      />
 
       {/* Selected Plan Benefits Box */}
       <motion.div

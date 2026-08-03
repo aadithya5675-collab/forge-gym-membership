@@ -46,6 +46,34 @@ const initialState: MembershipState = {
   submitError: null,
 };
 
+const SESSION_STORAGE_KEY = 'forge_onboarding_progress';
+
+function loadInitialState(): MembershipState {
+  try {
+    const saved = sessionStorage.getItem(SESSION_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        ...initialState,
+        currentStep: parsed.currentStep || 1,
+        billingCycle: parsed.billingCycle || 'annual',
+        selectedPlanId: parsed.selectedPlanId || 'performance',
+        selectedGoalId: parsed.selectedGoalId || 'build-muscle',
+        formData: {
+          firstName: parsed.formData?.firstName || '',
+          lastName: parsed.formData?.lastName || '',
+          email: parsed.formData?.email || '',
+          phone: parsed.formData?.phone || '',
+          password: '', // Never persist password
+        },
+      };
+    }
+  } catch {
+    // Ignore storage read errors
+  }
+  return initialState;
+}
+
 function membershipReducer(state: MembershipState, action: MembershipAction): MembershipState {
   switch (action.type) {
     case 'SET_STEP':
@@ -154,9 +182,37 @@ function membershipReducer(state: MembershipState, action: MembershipAction): Me
 const ease = [0.22, 1, 0.36, 1] as const;
 
 export function MembershipFlow() {
-  const [state, dispatch] = useReducer(membershipReducer, initialState);
+  const [state, dispatch] = useReducer(membershipReducer, initialState, loadInitialState);
   const formRegionRef = useRef<HTMLDivElement>(null);
   const stepHeadingRef = useRef<HTMLHeadingElement>(null);
+
+  // Persist non-sensitive progress to sessionStorage
+  React.useEffect(() => {
+    try {
+      if (!state.isSubmitted) {
+        sessionStorage.setItem(
+          SESSION_STORAGE_KEY,
+          JSON.stringify({
+            currentStep: state.currentStep,
+            billingCycle: state.billingCycle,
+            selectedPlanId: state.selectedPlanId,
+            selectedGoalId: state.selectedGoalId,
+            formData: {
+              firstName: state.formData.firstName,
+              lastName: state.formData.lastName,
+              email: state.formData.email,
+              phone: state.formData.phone,
+              // Password explicitly excluded
+            },
+          })
+        );
+      } else {
+        sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      }
+    } catch {
+      // Ignore storage write errors
+    }
+  }, [state]);
 
   const selectedPlan = PLANS.find((p) => p.id === state.selectedPlanId) || PLANS[1];
   const monthlyRate = calculateMonthlyRate(selectedPlan, state.billingCycle);
