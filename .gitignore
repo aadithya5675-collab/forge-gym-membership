@@ -3,3 +3,5 @@ dist/
 .env
 .env.*
 !.env.example
+# AI tooling (local only)
+.agents/
